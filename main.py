@@ -1,5 +1,5 @@
 from PyQt5.QtGui import*
-from PyQt5.QtWidgets import QDateEdit,QHBoxLayout, QListView, QTableWidgetItem, QMainWindow, QApplication, QWidget,QTableWidget, QVBoxLayout, QAction, QFileDialog, QLabel, QPushButton, QComboBox, QAbstractItemView
+from PyQt5.QtWidgets import QDesktopWidget, QDateEdit,QHBoxLayout, QListView, QTableWidgetItem, QMainWindow, QApplication, QWidget,QTableWidget, QVBoxLayout, QAction, QFileDialog, QLabel, QPushButton, QComboBox, QAbstractItemView
 from PyQt5.QtCore import*
 import sys
 import xlrd
@@ -9,47 +9,34 @@ from image2pdf import*
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
-        self.setGeometry(30, 30, 1320, 720)
+
+        geometry = QDesktopWidget().screenGeometry()
+        self.setGeometry(geometry)
+        screen_width = geometry.width()
+        screen_height = geometry.height()
         self.setWindowTitle("GCM")
         self.setWindowIcon(QIcon('img/icon.png'))
 
-        self.courses_file = xlrd.open_workbook('excel/courses.xlsx')
-        sheet = self.courses_file.sheet_by_index(0)
-        self.courses = sheet.col_values(1)
+        # Open options file and get courses, instructors and directors sheets
+        self.options_file = xlrd.open_workbook('files/options.xlsx')
 
-        self.instructors_file = xlrd.open_workbook('excel/instructors.xlsx')
-        isheet = self.instructors_file.sheet_by_index(0)
-        self.instructors = isheet.col_values(0)
+        courses_sheet = self.options_file.sheet_by_name('courses')
+        self.courses = courses_sheet.col_values(1)
 
-        self.index = []
+        instructors_sheet = self.options_file.sheet_by_name('instructors')
+        self.instructors = instructors_sheet.col_values(0)
+
+        director_sheet = self.options_file.sheet_by_name('directors')
+        self.directors = director_sheet.col_values(0)
+
+        #self.index = []
         self.serials = []
 
-        style = """QMainWindow{background-color:gray}
+        style = """QMainWindow{background-color:#1d212d}
         QMainMenu{
         background-color:gary;
         }
         """
-
-        wid_style = """QWidget{background-color:#efefef;
-                        margin:0;    }
-
-                        QPushButton{
-                        background-color:#efefef;
-                        color:#2a2e3b;
-                        font-size:20px;
-                        min-width:180px;
-                        min-height:55px;
-                        max-width:280px;
-                        max-height:60px;
-                        border-width:1px;
-                        border-color:#39455b;
-                        border-style:solid;}
-
-                        QPushButton:hover{
-                        background-color:#39455b;
-                        color:white;
-                        }
-                        """
 
         wid3_style = """QWidget{background-color:#2a2e3b;}
                                 QComboBox{
@@ -74,6 +61,10 @@ class MainWindow(QMainWindow):
                                 border-width:1px;
                                 border-color:white;
                                 border-style:solid;
+                                }
+                                QLabel{
+                                color:white;
+                                font-size:13px;
                                 }
                                         """
 
@@ -105,45 +96,34 @@ class MainWindow(QMainWindow):
                         }
                                         """
 
-        self.setStyleSheet(style)
+        self.setStyleSheet(style)       
 
-        self.wid = QWidget(self)
-        self.wid.setGeometry(0, 0, 300, 720)
-        self.wid.setStyleSheet(wid_style)
+        self.header_widget = QWidget(self)
+        self.header_widget.setGeometry(0, 0, screen_width,  int(screen_height*.14))
+        self.header_widget.setStyleSheet('background-color:#2a2e3b;color:white;')
 
-        self.wid_2 = QWidget(self)
-        self.wid_2.setGeometry(300, 0, 1120, 720)
-        self.wid_2.setStyleSheet('background-color:#1d212d')
+        self.options_widget = QWidget(self)
+        self.options_widget.setGeometry(int(screen_width*.1),  int(screen_height*.18), int(screen_width*.8), int(screen_height*.16))
+        self.options_widget.setStyleSheet(wid3_style)
 
-        self.wid_0 = QWidget(self)
-        self.wid_0.setGeometry(300, 0, 1320, 100)
-        self.wid_0.setStyleSheet('background-color:#2a2e3b;color:white;')
+        self.students_widget = QWidget(self)
+        self.students_widget.setGeometry(int(screen_width*.1), int(screen_height*.35), int(screen_width*.39), int(screen_height*.5))
+        self.students_widget.setStyleSheet(wid4_style)
 
-        self.wid_3 = QWidget(self)
-        self.wid_3.setGeometry(380, 180, 850, 120)
-        self.wid_3.setStyleSheet(wid3_style)
+        self.control_widget = QWidget(self)
+        self.control_widget.setGeometry(int(screen_width*.51), int(screen_height*.35), int(screen_width*.39), int(screen_height*.5))
+        self.control_widget.setStyleSheet(wid5_style)
 
-        self.wid_4 = QWidget(self)
-        self.wid_4.setGeometry(380, 310, 420, 350)
-        self.wid_4.setStyleSheet(wid4_style)
-
-        self.wid_5 = QWidget(self)
-        self.wid_5.setGeometry(810, 310, 420, 350)
-        self.wid_5.setStyleSheet(wid5_style)
-
-        self.widget1_ui()
-        self.widget3_ui()
-        self.widget4_ui()
-        self.widget5_ui()
+        self.options_items()
+        self.students_items()
+        self.control_items()
 
         self.st_btn.clicked.connect(self.ns_upload)
-        self.co_btn.clicked.connect(self.nc_upload)
-        self.in_btn.clicked.connect(self.ni_upload)
-
+        
         self.genserial_btn.clicked.connect(self.serial_number)
         self.gen_btn.clicked.connect(self.gen_certificate)
 
-        self.logo_label = QLabel(self.wid_0)
+        self.logo_label = QLabel(self.header_widget)
         self.logo_label.setGeometry(400,40,280,40)
         self.myPixmap = QPixmap('img/logo.png')
         self.myScaledPixmap = self.myPixmap.scaled(self.logo_label.size(), Qt.KeepAspectRatio)
@@ -152,62 +132,57 @@ class MainWindow(QMainWindow):
         self.ui()
         self.home()
 
-    def widget1_ui(self):
-        # LAYOUT and BUTTONS
-        self.v_lay = QVBoxLayout(self.wid)
-        self.v_lay.addStretch()
-        self.v_lay.addStretch()
-        self.st_btn = QPushButton('STUDENTS', self)
-        self.v_lay.addWidget(self.st_btn)
-        self.co_btn = QPushButton('COURSES', self)
-        self.v_lay.addWidget(self.co_btn)
-        self.in_btn = QPushButton('INSTRUCTORS', self)
-        self.v_lay.addWidget(self.in_btn)
-        self.v_lay.addStretch()
-        self.v_lay.setSpacing(18)
-        self.v_lay.addStretch()
-        self.v_lay.addStretch()
-        self.v_lay.addStretch()
-        self.v_lay.addStretch()
-
-    def widget3_ui(self):
+    def options_items(self):
         # Create combobox and add items.
-        self.s_comboBox = QComboBox()
-        # self.comboBox.setGeometry(QRect(40, 40, 491, 31))
-        self.s_comboBox.setObjectName("Students comboBox")
-        self.s_comboBox.addItem("All")
-        # self.s_comboBox.addItem("Qt")
-        self.s_comboBox.setEnabled(False)
-        self.s_comboBox.currentIndexChanged.connect(self.all)
+        self.d_lbl = QLabel('Director')
+        self.d_comboBox = QComboBox()
+        self.d_comboBox.setObjectName("director_comboBox")
+        for director in self.directors:
+            self.d_comboBox.addItem(director)
 
+        self.c_lbl = QLabel('Course')
         self.c_comboBox = QComboBox()
-        self.c_comboBox.setObjectName(("comboBox"))
+        self.c_comboBox.setObjectName(("course_comboBox"))
         for course in self.courses:
             self.c_comboBox.addItem(course)
 
+        self.i_lbl = QLabel('Instructor')
         self.i_comboBox = QComboBox()
-        self.i_comboBox.setObjectName(("comboBox"))
+        self.i_comboBox.setObjectName(("instructor_comboBox"))
         for instructor in self.instructors:
             self.i_comboBox.addItem(instructor)
 
-        # nice widget for editing the date
-        self.dateEdit = QDateEdit()
-        self.dateEdit.setCalendarPopup(True)
-        self.dateEdit.setDate(QDate.currentDate())
+        # From date
+        self.from_lbl = QLabel('From')
+        self.from_date = QDateEdit()
+        self.from_date.setCalendarPopup(True)
+        self.from_date.setDate(QDate.currentDate())
 
-        self.h_lay_3 = QHBoxLayout(self.wid_3)
+        # From date
+        self.to_lbl = QLabel('To')
+        self.to_date = QDateEdit()
+        self.to_date.setCalendarPopup(True)
+        self.to_date.setDate(QDate.currentDate())
+
+        self.h_lay_3 = QHBoxLayout(self.options_widget)
         self.h_lay_3.addStretch()
-        self.h_lay_3.addWidget(self.s_comboBox)
+        self.h_lay_3.addWidget(self.d_lbl)
+        self.h_lay_3.addWidget(self.d_comboBox)
         self.h_lay_3.addStretch()
+        self.h_lay_3.addWidget(self.c_lbl)
         self.h_lay_3.addWidget(self.c_comboBox)
         self.h_lay_3.addStretch()
+        self.h_lay_3.addWidget(self.i_lbl)
         self.h_lay_3.addWidget(self.i_comboBox)
         self.h_lay_3.addStretch()
-        self.h_lay_3.addWidget(self.dateEdit)
+        self.h_lay_3.addWidget(self.from_lbl)
+        self.h_lay_3.addWidget(self.from_date)
         self.h_lay_3.addStretch()
+        self.h_lay_3.addWidget(self.to_lbl)
+        self.h_lay_3.addWidget(self.to_date)
 
-    def widget4_ui(self):
-        self.tableWidget = QTableWidget(self.wid_4)
+    def students_items(self):
+        self.tableWidget = QTableWidget(self.students_widget)
         self.tableWidget.setGeometry(10, 10, 400, 340)
         self.tableWidget.setColumnCount(2)
         self.tableWidget.setRowCount(11)
@@ -216,15 +191,18 @@ class MainWindow(QMainWindow):
         self.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tableWidget.setColumnWidth(0, 295)
 
-    def widget5_ui(self):
-        self.listView = QListView(self.wid_5)
+    def control_items(self):
+        self.listView = QListView(self.control_widget)
         self.listView.setGeometry(10, 10, 195, 340)
+        
+        self.st_btn = QPushButton('Upload Students', self.control_widget)
+        self.st_btn.setGeometry(255, 40, 120, 30)
 
-        self.genserial_btn = QPushButton('Serial Numbers', self.wid_5)
-        self.genserial_btn.setGeometry(255, 40, 120, 30)
+        self.genserial_btn = QPushButton('Serial Numbers', self.control_widget)
+        self.genserial_btn.setGeometry(255, 80, 120, 30)
 
-        self.gen_btn = QPushButton('Certificate', self.wid_5)
-        self.gen_btn.setGeometry(255, 80, 120, 30)
+        self.gen_btn = QPushButton('Certificate', self.control_widget)
+        self.gen_btn.setGeometry(255, 120, 120, 30)
 
     def ui(self):
         openFile = QAction('&Open', self)
@@ -263,55 +241,27 @@ class MainWindow(QMainWindow):
     # Upload Buttons
     def ns_upload(self):
         name = QFileDialog.getOpenFileName(self, 'Open File')
-        print(str(name[0]))
+        #print(str(name[0]))
         #wb = xlrd.open_workbook('excel/stds.xlsx')
         wb = xlrd.open_workbook(str(name[0]))
-        print(2)
         sheet = wb.sheet_by_index(0)
-        print(sheet.col_values(0))
-        print(sheet.col_values(1))
+        #print(sheet.col_values(0))
+        #print(sheet.col_values(1))
         self.students = sheet.col_values(1)
         self.students.sort()
         for i in range(sheet.nrows):
             self.tableWidget.setItem(i, 0, QTableWidgetItem(self.students[i]))
-            self.index.append('%02d' % (i+1))
+            #self.index.append('%02d' % (i+1))
         # a = 5
         # print '%02d' % a
         # output: 05
-
-    def nc_upload(self):
-        cource = QFileDialog.getOpenFileName(self, 'Open File')
-        wb = xlrd.open_workbook(str(cource))
-        sheet = wb.sheet_by_index(0)
-        print(sheet.col_values(0))
-        print(sheet.col_values(1))
-        self.c_comboBox.clear()
-        self.courses = sheet.col_values(1)
-        for course in self.courses:
-            self.c_comboBox.addItem(course)
-        self.c_comboBox.update()
-
-    def ni_upload(self):
-        instructor = QFileDialog.getOpenFileName(self, 'Open File')
-        wb = xlrd.open_workbook(str(instructor))
-        sheet = wb.sheet_by_index(0)
-        print(sheet.col_values(0))
-        print(sheet.col_values(1))
-        self.i_comboBox.clear()
-        self.instructors = sheet.col_values(1)
-        for instructor in self.instructors:
-            self.i_comboBox.addItem(instructor)
-        self.i_comboBox.update()
-
     #
-    def all(self):
-        pass
 
     # Generate
     def serial_number(self):
         cn = self.c_comboBox.findText(self.c_comboBox.currentText())
-        print ('%02d' % (cn+1))
-        temp_var = self.dateEdit.date()
+        #print ('%02d' % (cn+1))
+        temp_var = self.from_date.date()
         var_name = temp_var.toPyDate()
         print(str(var_name), str(var_name)[5:7], str(var_name)[2:4])
         # print len(self.students)
@@ -319,17 +269,22 @@ class MainWindow(QMainWindow):
             serial = ('%02d' % (cn+1)) + str(var_name)[5:7] + str(var_name)[2:4] + ('%02d' % (i+1))
             self.serials.append(serial)
             self.tableWidget.setItem(i, 1, QTableWidgetItem(serial))
-        print(self.serials)
-        print(self.students)
+        #print(self.serials)
+        #print(self.students)
 
     def gen_certificate(self):
-        icon = QIcon('icon/pdf_5.png')
-        directory = QFileDialog.getExistingDirectory(self, 'Select directory')
-        print(directory)
+        icon = QIcon('files/icon/pdf_5.png')
+        self.directory = QFileDialog.getExistingDirectory(self, 'Select directory')
+
+        self.from_date_value = self.from_date.date().toPyDate().strftime('%m/%d/%Y')
+
+        self.to_date_value = self.to_date.date().toPyDate().strftime('%m/%d/%Y')
+
+        #print(directory)
         model = QStandardItemModel(self.listView)
         for i in range(len(self.students)):
-            im2pdf((self.students[i]).upper(), str(self.c_comboBox.currentText()), 'For 21 hours from 22 Feb - 27 Feb / 2020', ('SN:'+self.serials[i]),
-                   str(self.i_comboBox.currentText()))
+            im2pdf((self.students[i]).upper(), str(self.c_comboBox.currentText()),self.from_date_value , self.to_date_value , ('SN:'+self.serials[i]),
+                   str(self.i_comboBox.currentText()), str(self.d_comboBox.currentText()),  self.directory)
 
             # create an item with a caption
             item = QStandardItem(self.serials[i]+'.pdf')
