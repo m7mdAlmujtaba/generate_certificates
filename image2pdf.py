@@ -13,7 +13,7 @@ def im2pdf(name, course, from_date, to_date, serial, instructor, director, direc
     img = Image.open('img/empty_certificate.png')
     w, h = img.size
 
-    date = 'Date: ' + from_date +'To ' + to_date
+    date = 'Date: From ' + from_date +' To ' + to_date
 
     nc_font_path = "files/fonts/Proxima-Nova-Bold.otf"
     isd_font_path = "files/fonts/Poppins-SemiBold.ttf"
@@ -72,7 +72,7 @@ def im2pdf(name, course, from_date, to_date, serial, instructor, director, direc
     img.close()
     img = Image.open('img/certi.png')
 
-    pdf_path = "pdf/"+serial[3:]+".pdf"
+    pdf_path = directory+"/"+serial[3:]+".pdf"
 
     # converting into chunks using img2pdf
     pdf_bytes = img2pdf.convert(img.filename)
@@ -88,16 +88,19 @@ def im2pdf(name, course, from_date, to_date, serial, instructor, director, direc
 
     # closing pdf file
     file.close()
-    
+    last_id = 1
     rb = xlrd.open_workbook('files/ids.xls')
     r_sheet = rb.sheet_by_index(0)
     r = r_sheet.nrows
-
+    if r > 0:
+        last_id =  r_sheet.cell_value(rowx=(r-1), colx=0)
+    
     wb = copy(rb) 
     sheet = wb.get_sheet(0) 
-
-    sheet.write(r, 0, serial[3:])
-    sheet.write(r, 1, str(student_id))
+    
+    sheet.write(r, 0, int(last_id) + 1)
+    sheet.write(r, 1, serial[3:])
+    sheet.write(r, 2, str(student_id))
 
     wb.save('files/ids.xls')
     # output

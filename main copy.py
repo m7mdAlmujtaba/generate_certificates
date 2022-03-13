@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import QDesktopWidget, QDateEdit,QHBoxLayout, QListView, QT
 from PyQt5.QtCore import*
 import sys
 import xlrd
-from datetime import date
 from image2pdf import*
 
 
@@ -260,20 +259,14 @@ class MainWindow(QMainWindow):
 
     # Generate
     def serial_number(self):
-        #cn = self.c_comboBox.findText(self.c_comboBox.currentText())
+        cn = self.c_comboBox.findText(self.c_comboBox.currentText())
         #print ('%02d' % (cn+1))
-        today = date.today()
-        year = today.strftime("%Y")
-        print(year)
+        temp_var = self.from_date.date()
+        var_name = temp_var.toPyDate()
+        print(str(var_name), str(var_name)[5:7], str(var_name)[2:4])
         # print len(self.students)
-        last_id = 1
-        rb = xlrd.open_workbook('files/ids.xls')
-        r_sheet = rb.sheet_by_index(0)
-        r = r_sheet.nrows
-        if r > 0:
-            last_id =  r_sheet.cell_value(rowx=(r-1), colx=0)
         for i in range(len(self.students)):
-            serial = year[2:] + ('%05d' % (last_id+i))
+            serial = ('%02d' % (cn+1)) + str(var_name)[5:7] + str(var_name)[2:4] + ('%02d' % (i+1))
             self.serials.append(serial)
             self.tableWidget.setItem(i, 1, QTableWidgetItem(serial))
         #print(self.serials)
@@ -283,9 +276,9 @@ class MainWindow(QMainWindow):
         icon = QIcon('files/icon/pdf_5.png')
         self.directory = QFileDialog.getExistingDirectory(self, 'Select directory')
 
-        self.from_date_value = self.from_date.date().toPyDate().strftime('%d %B %Y')
+        self.from_date_value = self.from_date.date().toPyDate().strftime('%m/%d/%Y')
 
-        self.to_date_value = self.to_date.date().toPyDate().strftime('%d %B %Y')
+        self.to_date_value = self.to_date.date().toPyDate().strftime('%m/%d/%Y')
 
         #print(directory)
         model = QStandardItemModel(self.listView)
